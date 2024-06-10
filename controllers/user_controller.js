@@ -7,10 +7,14 @@ const login = async (req, res) => {
         const user = await User.findOne({email: req.body.email});
         if(user) {
             if(await bcrypt.compare(req.body.password, user.password)) {
-                let token = await jwt.sign({...user, timestamp: Date.now() }, process.env.SECRET, {
-                    expiresIn: '1h'
+                let token = await jwt.sign({user, timestamp: Date.now() }, process.env.SECRET, {
+                    expiresIn: '20s'
                 });
-                res.json({ user, token });
+                let refreshToken = await jwt.sign({user, timestamp: Date.now() }, process.env.REFRESH_SECRET, {
+                    expiresIn: '3d'
+                });
+                res.cookie('refresh_token', refreshToken, { expiresIn: '3d' });
+                res.json({ user, token, refreshToken });
             } else {
                 res.json({ message: "Incorrect password!" });    
             }
